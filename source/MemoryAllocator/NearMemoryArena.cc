@@ -92,14 +92,15 @@ static addr_t search_near_blank_page(addr_t pos, size_t alloc_range) {
   // check last region
   MemoryRegion last_region = process_memory_layout[process_memory_layout.size() - 1];
   addr_t last_region_end = (addr_t)last_region.address + last_region.length;
-  if (max_page_addr < last_region_end) {
-    resultPageAddr = next_page(last_region_end, OSMemory::AllocPageSize());
+  assumePageAddr = addr_max(min_page_addr, next_page(last_region_end, OSMemory::AllocPageSize()));
+  if (assumePageAddr <= max_page_addr) {
     resultPageAddr =
         (addr_t)OSMemory::Allocate((void *)assumePageAddr, OSMemory::AllocPageSize(), MemoryPermission::kReadExecute);
     if (resultPageAddr)
       return resultPageAddr;
   }
 
+  assumePageAddr = min_page_addr;
   for (int i = 0; i < process_memory_layout.size(); ++i) {
     MemoryRegion region = process_memory_layout[i];
     // check if assume-page-addr in memory-layout

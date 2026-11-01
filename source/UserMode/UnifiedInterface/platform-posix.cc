@@ -133,12 +133,14 @@ void *OSMemory::Allocate(void *address, int size, MemoryPermission access) {
   int prot = GetProtectionFromMemoryPermission(access);
 
   int flags = MAP_PRIVATE | MAP_ANONYMOUS;
-  if (address != NULL) {
-    flags = flags | MAP_FIXED;
-  }
   void *result = mmap(address, size, prot, flags, kMmapFd, kMmapFdOffset);
   if (result == MAP_FAILED)
     return nullptr;
+  // A near-address hint must never replace an existing mapping, including PROT_NONE reservations.
+  if (address != NULL && result != address) {
+    munmap(result, size);
+    return nullptr;
+  }
 
   return result;
 }
